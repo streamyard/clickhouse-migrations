@@ -25,7 +25,7 @@ type MigrationsRowData = {
   version: number;
   checksum: string;
   migration_name: string;
-}
+};
 
 type CliParameters = {
   migrationsHome: string;
@@ -33,8 +33,27 @@ type CliParameters = {
   user: string;
   password: string;
   db: string;
+  dbSkipCreation: boolean;
+  dbEngine: DBEngine;
+};
+
+type DBEngine =
+  | 'Atomic'
+  | 'MySQL'
+  | 'MaterializedMySQL'
+  | 'Lazy'
+  | 'PostgreSQL'
+  | 'MaterializedPostgreSQL'
+  | 'Replicated'
+  | 'SQLite';
+
+type CliOptions = {
+  dbOptions: {
+    skipCreation: boolean;
+    engine: DBEngine;
+  };
 };
 
 type QueryError = {
   message: string;
-}
+};
