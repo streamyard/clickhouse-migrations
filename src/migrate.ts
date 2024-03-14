@@ -234,7 +234,12 @@ const migration = async (
   username: string,
   password: string,
   db_name: string,
-  options: CliOptions,
+  options: CliOptions = {
+    dbOptions: {
+      skipCreation: false,
+      engine: 'Atomic',
+    },
+  },
 ): Promise<void> => {
   const migrations = get_migrations(migrations_home);
 
