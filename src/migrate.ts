@@ -28,11 +28,23 @@ const connect = (host: string, username: string, password: string, db_name?: str
   return createClient(db_params);
 };
 
-const create_db = async (host: string, username: string, password: string, db_name: string): Promise<void> => {
+const create_db = async (
+  host: string,
+  username: string,
+  password: string,
+  db_name: string,
+  options: CliOptions['dbOptions'],
+): Promise<void> => {
+  const { skipCreation, engine } = options;
+
+  if (skipCreation) {
+    return;
+  }
+
   const client = connect(host, username, password);
 
   // TODO: provided engine type over parameters
-  const q = `CREATE DATABASE IF NOT EXISTS ${db_name} ENGINE = Atomic`;
+  const q = `CREATE DATABASE IF NOT EXISTS ${db_name} ENGINE = ${engine}`;
 
   try {
     await client.exec({
@@ -222,10 +234,11 @@ const migration = async (
   username: string,
   password: string,
   db_name: string,
+  options: CliOptions,
 ): Promise<void> => {
   const migrations = get_migrations(migrations_home);
 
-  await create_db(host, username, password, db_name);
+  await create_db(host, username, password, db_name, options.dbOptions);
 
   const client = connect(host, username, password, db_name);
 
@@ -249,8 +262,12 @@ const migrate = () => {
     .requiredOption('--password <password>', 'Password', process.env.CH_MIGRATIONS_PASSWORD)
     .requiredOption('--db <name>', 'Database name', process.env.CH_MIGRATIONS_DB)
     .requiredOption('--migrations-home <dir>', "Migrations' directory", process.env.CH_MIGRATIONS_HOME)
+    .option('--db-skip-creation', 'Skip database creation', false)
+    .option('--db-engine', 'Database engine to use', 'Atomic')
     .action(async (options: CliParameters) => {
-      await migration(options.migrationsHome, options.host, options.user, options.password, options.db);
+      await migration(options.migrationsHome, options.host, options.user, options.password, options.db, {
+        dbOptions: { skipCreation: options.dbSkipCreation, engine: options.dbEngine },
+      });
     });
 
   program.parse();
