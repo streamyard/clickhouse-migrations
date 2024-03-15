@@ -21,6 +21,16 @@ type CliOptions = {
   isCloud: boolean;
 };
 
+const Defaults = {
+  dbEngine: 'Atomic' as DBEngine,
+  isCloud: false,
+};
+
+const getCliOptionsWithDefaults = (options: Partial<CliOptions> = {}): CliOptions => {
+  const { dbEngine = Defaults.dbEngine, isCloud = Defaults.isCloud } = options;
+  return { dbEngine, isCloud };
+};
+
 const log = (type: 'info' | 'error' = 'info', message: string, error?: string) => {
   if (type === 'info') {
     console.log('\x1b[36m', `clickhouse-migrations :`, '\x1b[0m', message);
@@ -50,7 +60,7 @@ const create_db = async (
   db_name: string,
   options: CliOptions,
 ): Promise<void> => {
-  const { isCloud, dbEngine } = options;
+  const { isCloud = false, dbEngine = 'Atomic' } = options || {};
 
   const client = connect(host, username, password);
   const ENGINE = !isCloud ? `ENGINE = ${dbEngine}` : ''; // In clickhouse cloud we can't set the engine type
@@ -245,11 +255,9 @@ const migration = async (
   username: string,
   password: string,
   db_name: string,
-  options: CliOptions = {
-    dbEngine: 'Atomic',
-    isCloud: false,
-  },
+  cliOptions?: CliOptions,
 ): Promise<void> => {
+  const options = getCliOptionsWithDefaults(cliOptions);
   const migrations = get_migrations(migrations_home);
 
   await create_db(host, username, password, db_name, options);
@@ -276,8 +284,8 @@ const migrate = () => {
     .requiredOption('--password <password>', 'Password', process.env.CH_MIGRATIONS_PASSWORD)
     .requiredOption('--db <name>', 'Database name', process.env.CH_MIGRATIONS_DB)
     .requiredOption('--migrations-home <dir>', "Migrations' directory", process.env.CH_MIGRATIONS_HOME)
-    .option('--db-engine', 'Database engine to use', 'Atomic')
-    .option('--is-cloud', 'Is running on Clickhouse Cloud', false)
+    .option('--db-engine', 'Database engine to use', Defaults.dbEngine)
+    .option('--is-cloud', 'Is running on Clickhouse Cloud', Defaults.isCloud)
     .action(async (options: CliParameters) => {
       await migration(options.migrationsHome, options.host, options.user, options.password, options.db, {
         dbEngine: options.dbEngine,
