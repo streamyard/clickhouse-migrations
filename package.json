@@ -1,6 +1,6 @@
 {
   "name": "@streamyard/clickhouse-migrations",
-  "version": "0.1.14-2",
+  "version": "0.1.14-3",
   "description": "ClickHouse Migrations",
   "bin": {
     "clickhouse-migrations": "lib/cli.js"
