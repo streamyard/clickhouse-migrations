@@ -11,6 +11,6 @@
     "declaration": true,
     "outDir": "./lib"   
   },
-  "include": ["src", "types"],
+  "include": ["./src"],
   "exclude": ["node_modules", "tests"]
 }

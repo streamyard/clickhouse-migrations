@@ -33,25 +33,8 @@ type CliParameters = {
   user: string;
   password: string;
   db: string;
-  dbSkipCreation: boolean;
   dbEngine: DBEngine;
-};
-
-type DBEngine =
-  | 'Atomic'
-  | 'MySQL'
-  | 'MaterializedMySQL'
-  | 'Lazy'
-  | 'PostgreSQL'
-  | 'MaterializedPostgreSQL'
-  | 'Replicated'
-  | 'SQLite';
-
-type CliOptions = {
-  dbOptions: {
-    skipCreation: boolean;
-    engine: DBEngine;
-  };
+  isCloud: boolean;
 };
 
 type QueryError = {
