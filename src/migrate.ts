@@ -255,7 +255,7 @@ const migration = async (
   username: string,
   password: string,
   db_name: string,
-  cliOptions?: CliOptions,
+  cliOptions?: Partial<CliOptions>,
 ): Promise<void> => {
   const options = getCliOptionsWithDefaults(cliOptions);
   const migrations = get_migrations(migrations_home);
