@@ -6,6 +6,21 @@ import crypto from 'crypto';
 
 import { sql_queries, sql_sets } from './sql-parse';
 
+type DBEngine =
+  | 'Atomic'
+  | 'MySQL'
+  | 'MaterializedMySQL'
+  | 'Lazy'
+  | 'PostgreSQL'
+  | 'MaterializedPostgreSQL'
+  | 'Replicated'
+  | 'SQLite';
+
+type CliOptions = {
+  dbEngine: DBEngine;
+  isCloud: boolean;
+};
+
 const log = (type: 'info' | 'error' = 'info', message: string, error?: string) => {
   if (type === 'info') {
     console.log('\x1b[36m', `clickhouse-migrations :`, '\x1b[0m', message);
@@ -33,18 +48,14 @@ const create_db = async (
   username: string,
   password: string,
   db_name: string,
-  options: CliOptions['dbOptions'],
+  options: CliOptions,
 ): Promise<void> => {
-  const { skipCreation, engine } = options;
-
-  if (skipCreation) {
-    return;
-  }
+  const { isCloud, dbEngine } = options;
 
   const client = connect(host, username, password);
+  const ENGINE = !isCloud ? `ENGINE = ${dbEngine}` : ''; // In clickhouse cloud we can't set the engine type
 
-  // TODO: provided engine type over parameters
-  const q = `CREATE DATABASE IF NOT EXISTS ${db_name} ENGINE = ${engine}`;
+  const q = [`CREATE DATABASE IF NOT EXISTS ${db_name}`, ENGINE].join(' ');
 
   try {
     await client.exec({
@@ -235,15 +246,13 @@ const migration = async (
   password: string,
   db_name: string,
   options: CliOptions = {
-    dbOptions: {
-      skipCreation: false,
-      engine: 'Atomic',
-    },
+    dbEngine: 'Atomic',
+    isCloud: false,
   },
 ): Promise<void> => {
   const migrations = get_migrations(migrations_home);
 
-  await create_db(host, username, password, db_name, options.dbOptions);
+  await create_db(host, username, password, db_name, options);
 
   const client = connect(host, username, password, db_name);
 
@@ -267,11 +276,12 @@ const migrate = () => {
     .requiredOption('--password <password>', 'Password', process.env.CH_MIGRATIONS_PASSWORD)
     .requiredOption('--db <name>', 'Database name', process.env.CH_MIGRATIONS_DB)
     .requiredOption('--migrations-home <dir>', "Migrations' directory", process.env.CH_MIGRATIONS_HOME)
-    .option('--db-skip-creation', 'Skip database creation', false)
     .option('--db-engine', 'Database engine to use', 'Atomic')
+    .option('--is-cloud', 'Is running on Clickhouse Cloud', false)
     .action(async (options: CliParameters) => {
       await migration(options.migrationsHome, options.host, options.user, options.password, options.db, {
-        dbOptions: { skipCreation: options.dbSkipCreation, engine: options.dbEngine },
+        dbEngine: options.dbEngine,
+        isCloud: options.isCloud,
       });
     });
 
